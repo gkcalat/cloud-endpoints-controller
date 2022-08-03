@@ -27,16 +27,16 @@ func (c *Config) loadAndValidate() error {
 	var err error
 
 	if c.Project == "" {
-		log.Printf("[INFO] Fetching Project ID from Compute metadata API...")
 		c.Project, err = metadata.ProjectID()
+		log.Printf("[INFO] Fetching Project ID from Compute metadata API: %s", c.Project)
 		if err != nil {
 			return err
 		}
 	}
 
 	if c.ProjectNum == "" {
-		log.Printf("[INFO] Fetching Numeric Project ID from Compute metadata API...")
 		c.ProjectNum, err = metadata.NumericProjectID()
+		log.Printf("[INFO] Fetching Numeric Project ID from Compute metadata API: %s", c.ProjectNum)
 		if err != nil {
 			return err
 		}

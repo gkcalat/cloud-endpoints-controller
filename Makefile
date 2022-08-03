@@ -1,4 +1,4 @@
-TAG = dev
+TAG = 0.30
 
 all: install
 
@@ -6,10 +6,10 @@ install:
 	go install
 
 image:
-	docker build -t gcr.io/cloud-solutions-group/cloud-endpoints-controller:$(TAG) .
+	docker build -t gcr.io/ablai-kfp-dev-352222/cloud-solutions-group/cloud-endpoints-controller:$(TAG) .
 
 push: image
-	docker push gcr.io/cloud-solutions-group/cloud-endpoints-controller:$(TAG)
+	docker push gcr.io/ablai-kfp-dev-352222/cloud-solutions-group/cloud-endpoints-controller:$(TAG)
 
 install-metacontroller:
 	helm install --name metacontroller --namespace metacontroller charts/metacontroller

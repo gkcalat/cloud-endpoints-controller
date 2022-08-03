@@ -92,8 +92,10 @@ func webhookHandler() func(w http.ResponseWriter, r *http.Request) {
 func sync(parent *CloudEndpoint, children *CloudEndpointControllerRequestChildren) (*CloudEndpointControllerStatus, *[]interface{}, error) {
 	status := makeStatus(parent, children)
 	currState := status.StateCurrent
+	log.Printf("[DEBUG][%s] Initial state: %s", parent.Name, currState)
 	if currState == "" {
 		currState = StateIdle
+		log.Printf("[INFO][%s] Empty state detected - set to %s", parent.Name, currState)
 	}
 	desiredChildren := make([]interface{}, 0)
 	nextState := currState[0:1] + currState[1:] // string copy of currState
@@ -120,11 +122,10 @@ func sync(parent *CloudEndpoint, children *CloudEndpointControllerRequestChildre
 				return status, &desiredChildren, fmt.Errorf("[ERROR][%s] Failed to get existing endpoint service: %v", parent.Name, err)
 			}
 		} else {
-			log.Printf("[INFO][%s] Endpoint service already exists, skipping create.", parent.Name)
+			currState == StateEndpointCreatePending
+			log.Printf("[INFO][%s] Endpoint service already exists. Forcing status to %s", parent.Name, currState)
 		}
-
 		nextState = StateEndpointCreatePending
-
 	}
 
 	if currState == StateEndpointCreatePending {
@@ -278,9 +279,9 @@ func sync(parent *CloudEndpoint, children *CloudEndpointControllerRequestChildre
 
 	// Advance the state
 	if status.StateCurrent != nextState {
-		log.Printf("[INFO][%s] Current state: %s", parent.Name, nextState)
+		log.Printf("[INFO][%s] Changing state: from %s to %s", parent.Name, status.StateCurrent, nextState)
+		status.StateCurrent = nextState
 	}
-	status.StateCurrent = nextState
 
 	return status, &desiredChildren, nil
 }
@@ -291,8 +292,9 @@ func changeDetected(parent *CloudEndpoint, children *CloudEndpointControllerRequ
 	if status.StateCurrent == StateIdle {
 
 		// Changed if parent spec changes
-		if status.LastAppliedSig != calcParentSig(parent, "") {
-			log.Printf("[DEBUG][%s] Changed because parent sig different", parent.Name)
+		newSig := calcParentSig(parent, "")
+		if status.LastAppliedSig != newSig {
+			log.Printf("[DEBUG][%s] Changed because parent sig changed from %s to %s", parent.Name, status.LastAppliedSig, newSig)
 			changed = true
 		}
 
@@ -303,7 +305,7 @@ func changeDetected(parent *CloudEndpoint, children *CloudEndpointControllerRequ
 			if err == nil {
 				// Compare ingress IP with configured IP
 				if len(ingress.Status.LoadBalancer.Ingress) > 0 && ingress.Status.LoadBalancer.Ingress[0].IP != status.IngressIP {
-					log.Printf("[DEBUG][%s] Changed because ingress target IP changed", parent.Name)
+					log.Printf("[DEBUG][%s] Changed because ingress target IP changed from %s to %s", parent.Name, status.IngressIP, ingress.Status.LoadBalancer.Ingress[0].IP)
 					changed = true
 				}
 			}
