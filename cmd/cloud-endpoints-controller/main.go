@@ -122,7 +122,7 @@ func sync(parent *CloudEndpoint, children *CloudEndpointControllerRequestChildre
 				return status, &desiredChildren, fmt.Errorf("[ERROR][%s] Failed to get existing endpoint service: %v", parent.Name, err)
 			}
 		} else {
-			currState == StateEndpointCreatePending
+			currState = StateEndpointCreatePending
 			log.Printf("[INFO][%s] Endpoint service already exists. Forcing status to %s", parent.Name, currState)
 		}
 		nextState = StateEndpointCreatePending
